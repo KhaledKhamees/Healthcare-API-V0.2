@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Healthcare_API_V0._2_API</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Healthcare-API_V0.2_Application\Healthcare-API_V0.2_Application.csproj" />
+    <ProjectReference Include="..\Healthcare-API_V0.2_Infrastructure\Healthcare-API_V0.2_Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
