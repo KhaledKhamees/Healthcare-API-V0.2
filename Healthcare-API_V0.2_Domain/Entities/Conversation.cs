@@ -2,11 +2,22 @@
 {
     public class Conversation
     {
-        public int Id { get; set; }
-        public string UserAId { get; set; } = default!;
-        public string UserBId { get; set; } = default!;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int Id { get; private set; }
+        public string UserAId { get; private set; } = default!;
+        public string UserBId { get; private set; } = default!;
+        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+        public ICollection<Message> Messages { get; private set; } = new List<Message>();
 
-        public ICollection<Message> Messages { get; set; } = new List<Message>();
+        public Conversation(string userAId, string userBId)
+        {
+            UserAId = userAId;
+            UserBId = userBId;
+            CreatedAt = DateTime.UtcNow;
+        }
+
+        public void AddMessage(Message message)
+        {
+            Messages.Add(message);
+        }
     }
 }
