@@ -1,46 +1,52 @@
 ﻿using System;
-using System.Collections.Generic;
+using System;
+using Healthcare_API.Models.Enums;
 
 namespace Healthcare_API.Models;
 
-public partial class Appointment
+public class Appointment
 {
     public long AppointmentID { get; private set; }
     public long PatientID { get; private set; }
-    public long DoctorID { get; private set; }
-    public DateOnly AppointmentDate { get; private set; }
-    public TimeOnly AppointmentTime { get; private set; }
-    public string ReasonForVisit { get; private set; }
-    public string Status { get; private set; }
-    public DateTime? CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-    public virtual ICollection<Billing> Billings { get; private set; } = new List<Billing>();
-    public virtual Doctor Doctor { get; private set; }
-    public virtual Patient Patient { get; private set; }
+    public long DoctorClinicID { get; private set; }
 
-    public Appointment(long patientID, long doctorID, DateOnly appointmentDate, TimeOnly appointmentTime, string reasonForVisit, string status = "Scheduled")
+    public DateTime StartTime { get; private set; }
+    public string? ReasonForVisit { get; private set; }
+    public AppointmentStatus Status { get; private set; } = AppointmentStatus.Scheduled;
+
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+
+    // Navigation: appointment is for a patient with a doctor at a clinic
+    public virtual Patient Patient { get; private set; }
+    public virtual DoctorClinic DoctorClinic { get; private set; }
+
+    public Appointment(long patientID, long doctorClinicID, DateTime startTime, string? reasonForVisit = null)
     {
         PatientID = patientID;
-        DoctorID = doctorID;
-        AppointmentDate = appointmentDate;
-        AppointmentTime = appointmentTime;
+        DoctorClinicID = doctorClinicID;
+        StartTime = startTime;
         ReasonForVisit = reasonForVisit;
-        Status = status;
+        Status = AppointmentStatus.Scheduled;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateAppointment(DateOnly appointmentDate, TimeOnly appointmentTime, string reasonForVisit, string status)
+    public void ChangeStatus(AppointmentStatus newStatus)
     {
-        AppointmentDate = appointmentDate;
-        AppointmentTime = appointmentTime;
-        ReasonForVisit = reasonForVisit;
-        Status = status;
+        Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void ChangeStatus(string newStatus)
+    public void UpdateAppointment(DateTime startTime, string? reasonForVisit)
     {
-        Status = newStatus;
+        StartTime = startTime;
+        ReasonForVisit = reasonForVisit;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Cancel()
+    {
+        Status = AppointmentStatus.Cancelled;
         UpdatedAt = DateTime.UtcNow;
     }
 }
