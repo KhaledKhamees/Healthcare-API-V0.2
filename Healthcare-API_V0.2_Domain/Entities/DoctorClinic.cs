@@ -5,9 +5,9 @@ namespace Healthcare_API.Models;
 
 public class DoctorClinic
 {
-    public long DoctorClinicID { get; private set; }
-    public long DoctorID { get; private set; }
-    public long ClinicID { get; private set; }
+    public Guid DoctorClinicId { get; private set; } = Guid.NewGuid();
+    public Guid DoctorId { get; private set; }
+    public Guid ClinicId { get; private set; }
     public decimal ConsultationFee { get; private set; }
     public int AppointmentDurationMinutes { get; private set; } = 30;
 
@@ -20,10 +20,11 @@ public class DoctorClinic
     public virtual ICollection<DoctorAvailability> Availabilities { get; private set; } = new List<DoctorAvailability>();
     public virtual ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
 
-    public DoctorClinic(long doctorID, long clinicID, decimal consultationFee, int appointmentDurationMinutes = 30)
+    public DoctorClinic(Guid doctorId, Guid clinicId, decimal consultationFee, int appointmentDurationMinutes = 30)
     {
-        DoctorID = doctorID;
-        ClinicID = clinicID;
+        DoctorClinicId = Guid.NewGuid();
+        DoctorId = doctorId;
+        ClinicId = clinicId;
         ConsultationFee = consultationFee;
         AppointmentDurationMinutes = appointmentDurationMinutes;
         CreatedAt = DateTime.UtcNow;

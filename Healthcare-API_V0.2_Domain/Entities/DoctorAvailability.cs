@@ -5,8 +5,8 @@ namespace Healthcare_API.Models;
 
 public class DoctorAvailability
 {
-    public long AvailabilityID { get; private set; }
-    public long DoctorClinicID { get; private set; }
+    public Guid AvailabilityId { get; private set; } = Guid.NewGuid();
+    public Guid DoctorClinicId { get; private set; }
     public System.DayOfWeek DayOfWeek { get; private set; }
     public TimeOnly StartTime { get; private set; }
     public TimeOnly EndTime { get; private set; }
@@ -18,9 +18,10 @@ public class DoctorAvailability
     // Navigation: availability belongs to a doctor at a specific clinic
     public virtual DoctorClinic DoctorClinic { get; private set; }
 
-    public DoctorAvailability(long doctorClinicID, System.DayOfWeek dayOfWeek, TimeOnly startTime, TimeOnly endTime)
+    public DoctorAvailability(Guid doctorClinicId, System.DayOfWeek dayOfWeek, TimeOnly startTime, TimeOnly endTime)
     {
-        DoctorClinicID = doctorClinicID;
+        AvailabilityId = Guid.NewGuid();
+        DoctorClinicId = doctorClinicId;
         DayOfWeek = dayOfWeek;
         StartTime = startTime;
         EndTime = endTime;

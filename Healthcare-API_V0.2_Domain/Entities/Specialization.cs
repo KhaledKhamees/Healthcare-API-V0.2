@@ -6,7 +6,7 @@ namespace Healthcare_API.Models;
 
 public class Specialization
 {
-    public int SpecializationID { get; private set; }
+    public Guid SpecializationId { get; private set; } = Guid.NewGuid();
     public string Name { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
@@ -17,6 +17,7 @@ public class Specialization
 
     public Specialization(string name)
     {
+        SpecializationId = Guid.NewGuid();
         Name = name;
         CreatedAt = DateTime.UtcNow;
     }

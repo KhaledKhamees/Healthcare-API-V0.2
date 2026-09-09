@@ -6,9 +6,9 @@ namespace Healthcare_API.Models;
 
 public class Appointment
 {
-    public long AppointmentID { get; private set; }
-    public long PatientID { get; private set; }
-    public long DoctorClinicID { get; private set; }
+    public Guid AppointmentId { get; private set; } = Guid.NewGuid();
+    public Guid PatientId { get; private set; }
+    public Guid DoctorClinicId { get; private set; }
 
     public DateTime StartTime { get; private set; }
     public string? ReasonForVisit { get; private set; }
@@ -21,10 +21,11 @@ public class Appointment
     public virtual Patient Patient { get; private set; }
     public virtual DoctorClinic DoctorClinic { get; private set; }
 
-    public Appointment(long patientID, long doctorClinicID, DateTime startTime, string? reasonForVisit = null)
+    public Appointment(Guid patientId, Guid doctorClinicId, DateTime startTime, string? reasonForVisit = null)
     {
-        PatientID = patientID;
-        DoctorClinicID = doctorClinicID;
+        AppointmentId = Guid.NewGuid();
+        PatientId = patientId;
+        DoctorClinicId = doctorClinicId;
         StartTime = startTime;
         ReasonForVisit = reasonForVisit;
         Status = AppointmentStatus.Scheduled;

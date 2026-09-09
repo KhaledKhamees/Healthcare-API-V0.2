@@ -7,10 +7,10 @@ namespace Healthcare_API.Models;
 
 public class Doctor
 {
-    public long DoctorID { get; private set; }
+    public Guid DoctorId { get; private set; } = Guid.NewGuid();
 
-    // Link to ApplicationUser (one-to-one)
-    public string ApplicationUserID { get; private set; }
+    // Link to ApplicationUser (Identity ID as primitive) - no navigation to ApplicationUser
+    public Guid ApplicationUserId { get; private set; }
 
     // Professional information (source of truth for doctor's name)
     public string FirstName { get; private set; }
@@ -22,22 +22,22 @@ public class Doctor
     public DoctorStatus Status { get; private set; } = DoctorStatus.Pending;
 
     // Specialization
-    public int SpecializationID { get; private set; }
+    public Guid SpecializationId { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
     // Navigation: appointments are accessed through DoctorClinic
-    public virtual ApplicationUser ApplicationUser { get; private set; }
     public virtual Specialization Specialization { get; private set; }
     public virtual ICollection<DoctorClinic> DoctorClinics { get; private set; } = new List<DoctorClinic>();
 
-    public Doctor(string applicationUserID, string firstName, string lastName, int specializationID)
+    public Doctor(Guid applicationUserId, string firstName, string lastName, Guid specializationId)
     {
-        ApplicationUserID = applicationUserID;
+        DoctorId = Guid.NewGuid();
+        ApplicationUserId = applicationUserId;
         FirstName = firstName;
         LastName = lastName;
-        SpecializationID = specializationID;
+        SpecializationId = specializationId;
         Status = DoctorStatus.Pending;
         CreatedAt = DateTime.UtcNow;
     }

@@ -6,7 +6,7 @@ namespace Healthcare_API.Models;
 
 public class Clinic
 {
-    public long ClinicID { get; private set; }
+    public Guid ClinicId { get; private set; } = Guid.NewGuid();
     public string Name { get; private set; }
     public string Address { get; private set; }
     public string City { get; private set; }
@@ -20,6 +20,7 @@ public class Clinic
 
     public Clinic(string name, string address, string city, string? phoneNumber = null)
     {
+        ClinicId = Guid.NewGuid();
         Name = name;
         Address = address;
         City = city;

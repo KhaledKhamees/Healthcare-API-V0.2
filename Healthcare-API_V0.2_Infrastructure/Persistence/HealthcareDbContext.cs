@@ -1,12 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 using Healthcare_API.Models;
 using Healthcare_API.Models.Enums;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Healthcare_API_V0._2_Infrastructure.Persistence
 {
-    internal class HealthcareDbContext : IdentityDbContext<ApplicationUser>
+    /// <summary>
+    /// DbContext for Healthcare application.
+    /// Manages both ASP.NET Core Identity (ApplicationUser) and Domain entities.
+    /// Relationships between Identity and Domain are configured via Fluent API without navigation properties.
+    /// </summary>
+    internal class HealthcareDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
     {
         public HealthcareDbContext(DbContextOptions<HealthcareDbContext> options) : base(options)
         {
@@ -27,47 +32,49 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
             // ===== Patient Configuration =====
             modelBuilder.Entity<Patient>(entity =>
             {
-                entity.HasKey(x => x.PatientID);
+                entity.HasKey(x => x.PatientId);
 
-                entity.HasOne(x => x.ApplicationUser)
-                    .WithOne(x => x.Patient)
-                    .HasForeignKey<Patient>(x => x.ApplicationUserID)
+                // One-to-One relationship with ApplicationUser (via primitive FK only)
+                entity.HasOne<ApplicationUser>()
+                    .WithOne()
+                    .HasForeignKey<Patient>(x => x.ApplicationUserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasMany(x => x.Appointments)
                     .WithOne(x => x.Patient)
-                    .HasForeignKey(x => x.PatientID)
+                    .HasForeignKey(x => x.PatientId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(x => x.ApplicationUserID)
+                entity.HasIndex(x => x.ApplicationUserId)
                     .IsUnique();
             });
 
             // ===== Doctor Configuration =====
             modelBuilder.Entity<Doctor>(entity =>
             {
-                entity.HasKey(x => x.DoctorID);
+                entity.HasKey(x => x.DoctorId);
 
-                entity.HasOne(x => x.ApplicationUser)
-                    .WithOne(x => x.Doctor)
-                    .HasForeignKey<Doctor>(x => x.ApplicationUserID)
+                // One-to-One relationship with ApplicationUser (via primitive FK only)
+                entity.HasOne<ApplicationUser>()
+                    .WithOne()
+                    .HasForeignKey<Doctor>(x => x.ApplicationUserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(x => x.Specialization)
                     .WithMany(x => x.Doctors)
-                    .HasForeignKey(x => x.SpecializationID)
+                    .HasForeignKey(x => x.SpecializationId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasMany(x => x.DoctorClinics)
                     .WithOne(x => x.Doctor)
-                    .HasForeignKey(x => x.DoctorID)
+                    .HasForeignKey(x => x.DoctorId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(x => x.ApplicationUserID)
+                entity.HasIndex(x => x.ApplicationUserId)
                     .IsUnique();
 
                 entity.HasIndex(x => x.Status);
-                entity.HasIndex(x => x.SpecializationID);
+                entity.HasIndex(x => x.SpecializationId);
 
                 entity.Property(x => x.Status)
                     .HasConversion<int>();
@@ -76,11 +83,11 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
             // ===== Specialization Configuration =====
             modelBuilder.Entity<Specialization>(entity =>
             {
-                entity.HasKey(x => x.SpecializationID);
+                entity.HasKey(x => x.SpecializationId);
 
                 entity.HasMany(x => x.Doctors)
                     .WithOne(x => x.Specialization)
-                    .HasForeignKey(x => x.SpecializationID)
+                    .HasForeignKey(x => x.SpecializationId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(x => x.Name)
@@ -90,11 +97,11 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
             // ===== Clinic Configuration =====
             modelBuilder.Entity<Clinic>(entity =>
             {
-                entity.HasKey(x => x.ClinicID);
+                entity.HasKey(x => x.ClinicId);
 
                 entity.HasMany(x => x.DoctorClinics)
                     .WithOne(x => x.Clinic)
-                    .HasForeignKey(x => x.ClinicID)
+                    .HasForeignKey(x => x.ClinicId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(x => x.City);
@@ -104,29 +111,29 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
             // ===== DoctorClinic Configuration (Junction Table) =====
             modelBuilder.Entity<DoctorClinic>(entity =>
             {
-                entity.HasKey(x => x.DoctorClinicID);
+                entity.HasKey(x => x.DoctorClinicId);
 
                 entity.HasOne(x => x.Doctor)
                     .WithMany(x => x.DoctorClinics)
-                    .HasForeignKey(x => x.DoctorID)
+                    .HasForeignKey(x => x.DoctorId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(x => x.Clinic)
                     .WithMany(x => x.DoctorClinics)
-                    .HasForeignKey(x => x.ClinicID)
+                    .HasForeignKey(x => x.ClinicId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasMany(x => x.Availabilities)
                     .WithOne(x => x.DoctorClinic)
-                    .HasForeignKey(x => x.DoctorClinicID)
+                    .HasForeignKey(x => x.DoctorClinicId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasMany(x => x.Appointments)
                     .WithOne(x => x.DoctorClinic)
-                    .HasForeignKey(x => x.DoctorClinicID)
+                    .HasForeignKey(x => x.DoctorClinicId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(x => new { x.DoctorID, x.ClinicID })
+                entity.HasIndex(x => new { x.DoctorId, x.ClinicId })
                     .IsUnique();
 
                 entity.Property(x => x.ConsultationFee)
@@ -136,14 +143,14 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
             // ===== DoctorAvailability Configuration =====
             modelBuilder.Entity<DoctorAvailability>(entity =>
             {
-                entity.HasKey(x => x.AvailabilityID);
+                entity.HasKey(x => x.AvailabilityId);
 
                 entity.HasOne(x => x.DoctorClinic)
                     .WithMany(x => x.Availabilities)
-                    .HasForeignKey(x => x.DoctorClinicID)
+                    .HasForeignKey(x => x.DoctorClinicId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(x => new { x.DoctorClinicID, x.DayOfWeek });
+                entity.HasIndex(x => new { x.DoctorClinicId, x.DayOfWeek });
                 entity.HasIndex(x => x.IsActive);
 
                 entity.Property(x => x.DayOfWeek)
@@ -153,20 +160,20 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
             // ===== Appointment Configuration =====
             modelBuilder.Entity<Appointment>(entity =>
             {
-                entity.HasKey(x => x.AppointmentID);
+                entity.HasKey(x => x.AppointmentId);
 
                 entity.HasOne(x => x.Patient)
                     .WithMany(x => x.Appointments)
-                    .HasForeignKey(x => x.PatientID)
+                    .HasForeignKey(x => x.PatientId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(x => x.DoctorClinic)
                     .WithMany(x => x.Appointments)
-                    .HasForeignKey(x => x.DoctorClinicID)
+                    .HasForeignKey(x => x.DoctorClinicId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(x => x.PatientID);
-                entity.HasIndex(x => x.DoctorClinicID);
+                entity.HasIndex(x => x.PatientId);
+                entity.HasIndex(x => x.DoctorClinicId);
                 entity.HasIndex(x => x.StartTime);
                 entity.HasIndex(x => x.Status);
 
@@ -176,3 +183,4 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
         }
     }
 }
+
