@@ -1,10 +1,12 @@
 ﻿using Healthcare_API_V0._2_Infrastructure.Persistence;
+using Healthcare_API_V0._2_Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Healthcare_API.Models;
 using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Healthcare_API_V0._2_Application.Interfaces.Repository;
 
 namespace Healthcare_API_V0._2_Infrastructure
 {
@@ -30,6 +32,14 @@ namespace Healthcare_API_V0._2_Infrastructure
             })
             .AddEntityFrameworkStores<HealthcareDbContext>()
             .AddDefaultTokenProviders();
+
+            services.AddScoped<IPatientRepository, PatientRepository>();
+            services.AddScoped<IDoctorRepository, DoctorRepository>();
+            services.AddScoped<IClinicRepository, ClinicRepository>();
+            services.AddScoped<ISpecializationRepository, SpecializationRepository>();
+            services.AddScoped<IDoctorClinicRepository, DoctorClinicRepository>();
+            services.AddScoped<IDoctorAvailabilityRepository, DoctorAvailabilityRepository>();
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
             return services;
         }

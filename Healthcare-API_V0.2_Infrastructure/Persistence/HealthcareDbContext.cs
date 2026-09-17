@@ -11,7 +11,7 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
     /// Manages both ASP.NET Core Identity (ApplicationUser) and Domain entities.
     /// Relationships between Identity and Domain are configured via Fluent API without navigation properties.
     /// </summary>
-    internal class HealthcareDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
+    public class HealthcareDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
     {
         public HealthcareDbContext(DbContextOptions<HealthcareDbContext> options) : base(options)
         {

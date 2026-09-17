@@ -1,0 +1,45 @@
+using Healthcare_API_V0._2_Application.Interfaces.Repository;
+using Healthcare_API_V0._2_Infrastructure.Persistence;
+using Healthcare_API_V0._2_Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Healthcare_API.Models;
+using Microsoft.AspNetCore.Identity;
+
+namespace Healthcare_API_V0._2_Infrastructure
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        {
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            services.AddDbContext<HealthcareDbContext>(options =>
+                options.UseSqlServer(connectionString)
+            );
+
+            services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 8;
+            })
+            .AddEntityFrameworkStores<HealthcareDbContext>()
+            .AddDefaultTokenProviders();
+
+            services.AddScoped<IPatientRepository, PatientRepository>();
+            services.AddScoped<IDoctorRepository, DoctorRepository>();
+            services.AddScoped<IClinicRepository, ClinicRepository>();
+            services.AddScoped<ISpecializationRepository, SpecializationRepository>();
+            services.AddScoped<IDoctorClinicRepository, DoctorClinicRepository>();
+            services.AddScoped<IDoctorAvailabilityRepository, DoctorAvailabilityRepository>();
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+
+            return services;
+        }
+    }
+}
+
+
