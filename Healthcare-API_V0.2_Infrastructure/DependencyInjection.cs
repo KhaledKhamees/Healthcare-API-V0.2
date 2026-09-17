@@ -7,6 +7,8 @@ using Healthcare_API.Models;
 using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Healthcare_API_V0._2_Application.Interfaces.Repository;
+using Healthcare_API_V0._2_Application.Interfaces.Services;
+using Healthcare_API_V0._2_Application.Services;
 
 namespace Healthcare_API_V0._2_Infrastructure
 {
@@ -40,6 +42,14 @@ namespace Healthcare_API_V0._2_Infrastructure
             services.AddScoped<IDoctorClinicRepository, DoctorClinicRepository>();
             services.AddScoped<IDoctorAvailabilityRepository, DoctorAvailabilityRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+
+            services.AddScoped<IPatientService, PatientService>();
+            services.AddScoped<IDoctorService, DoctorService>();
+            services.AddScoped<IClinicService, ClinicService>();
+            services.AddScoped<ISpecializationService, SpecializationService>();
+            services.AddScoped<IDoctorClinicService, DoctorClinicService>();
+            services.AddScoped<IDoctorAvailabilityService, DoctorAvailabilityService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
 
             return services;
         }
