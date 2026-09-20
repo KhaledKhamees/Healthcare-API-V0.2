@@ -1,14 +1,17 @@
-﻿using Healthcare_API_V0._2_Infrastructure.Persistence;
-using Healthcare_API_V0._2_Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Healthcare_API.Models;
-using Healthcare_API_V0._2_Infrastructure.Persistence;
-using Microsoft.AspNetCore.Identity;
+﻿using Healthcare_API.Models;
+using Healthcare_API_V0._2_Application.Interfaces;
 using Healthcare_API_V0._2_Application.Interfaces.Repository;
 using Healthcare_API_V0._2_Application.Interfaces.Services;
 using Healthcare_API_V0._2_Application.Services;
+using Healthcare_API_V0._2_Infrastructure.Caching;
+using Healthcare_API_V0._2_Infrastructure.Persistence;
+using Healthcare_API_V0._2_Infrastructure.Persistence;
+using Healthcare_API_V0._2_Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace Healthcare_API_V0._2_Infrastructure
 {
@@ -50,6 +53,10 @@ namespace Healthcare_API_V0._2_Infrastructure
             services.AddScoped<IDoctorClinicService, DoctorClinicService>();
             services.AddScoped<IDoctorAvailabilityService, DoctorAvailabilityService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddSingleton<IConnectionMultiplexer>(
+                ConnectionMultiplexer.Connect(
+                    configuration.GetConnectionString("Redis")!));
+            services.AddScoped<ICacheService, CacheService>();
 
             return services;
         }
