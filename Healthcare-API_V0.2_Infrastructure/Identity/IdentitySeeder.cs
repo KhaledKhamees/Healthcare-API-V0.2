@@ -9,7 +9,7 @@ namespace Healthcare_API_V0._2_Infrastructure.Identity
 {
     public static class IdentitySeeder
     {
-        public static async Task SeedRolesAsync(RoleManager<IdentityRole> rolemanager)
+        public static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> rolemanager)
         {
             string[] roles = { 
                 "Doctor",
@@ -18,7 +18,7 @@ namespace Healthcare_API_V0._2_Infrastructure.Identity
             foreach (string role in roles)
             {
                 if (!await rolemanager.RoleExistsAsync(role)) {
-                    await rolemanager.CreateAsync(new IdentityRole(role));
+                    await rolemanager.CreateAsync(new IdentityRole<Guid>(role));
                 }
             }
         }

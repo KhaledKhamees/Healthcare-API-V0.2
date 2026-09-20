@@ -1,4 +1,5 @@
 using Healthcare_API.Models;
+using Healthcare_API_V0._2_Application.Interfaces;
 using Healthcare_API_V0._2_Application.Interfaces.Repository;
 using Healthcare_API_V0._2_Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
@@ -9,12 +10,16 @@ public class SpecializationService : ISpecializationService
 {
     private readonly ISpecializationRepository _specializationRepository;
     private readonly ILogger<SpecializationService> _logger;
+    private readonly ICacheService _cacheService;
 
-    public SpecializationService(ISpecializationRepository specializationRepository, ILogger<SpecializationService> logger)
+    public SpecializationService(ISpecializationRepository specializationRepository, ILogger<SpecializationService> logger, ICacheService cacheService)
     {
         _specializationRepository = specializationRepository;
         _logger = logger;
+        _cacheService = cacheService;
     }
+
+    private static string GetCacheKey(Guid specializationId) => $"specialization:{specializationId}";
 
     public async Task<Specialization?> GetByIdAsync(Guid specializationId, CancellationToken cancellationToken = default)
     {
@@ -25,11 +30,22 @@ public class SpecializationService : ISpecializationService
         }
 
         _logger.LogInformation("Getting specialization with ID {SpecializationId}", specializationId);
-        var specialization = await _specializationRepository.GetByIdAsync(specializationId, cancellationToken);
+        var specialization = await _cacheService.GetAsync<Specialization>(GetCacheKey(specializationId), cancellationToken);
+
+        if (specialization is not null)
+        {
+            return specialization;
+        }
+
+        specialization = await _specializationRepository.GetByIdAsync(specializationId, cancellationToken);
 
         if (specialization is null)
         {
             _logger.LogWarning("Specialization with ID {SpecializationId} was not found", specializationId);
+        }
+        else
+        {
+            await _cacheService.SetAsync(GetCacheKey(specializationId), specialization, cancellationToken: cancellationToken);
         }
 
         return specialization;
@@ -73,6 +89,7 @@ public class SpecializationService : ISpecializationService
 
         var specialization = new Specialization(name);
         await _specializationRepository.AddAsync(specialization, cancellationToken);
+        await _cacheService.SetAsync(GetCacheKey(specialization.SpecializationId), specialization, cancellationToken: cancellationToken);
 
         _logger.LogInformation("Specialization {SpecializationId} was successfully created", specialization.SpecializationId);
         return specialization;
@@ -110,6 +127,7 @@ public class SpecializationService : ISpecializationService
 
         specialization.UpdateSpecialization(name);
         await _specializationRepository.UpdateAsync(specialization, cancellationToken);
+        await _cacheService.SetAsync(GetCacheKey(specializationId), specialization, cancellationToken: cancellationToken);
 
         _logger.LogInformation("Specialization {SpecializationId} was successfully updated", specializationId);
     }
@@ -132,6 +150,7 @@ public class SpecializationService : ISpecializationService
         }
 
         await _specializationRepository.DeleteAsync(specialization, cancellationToken);
+        await _cacheService.RemoveAsync(GetCacheKey(specializationId), cancellationToken);
 
         _logger.LogInformation("Specialization {SpecializationId} was successfully deleted", specializationId);
     }

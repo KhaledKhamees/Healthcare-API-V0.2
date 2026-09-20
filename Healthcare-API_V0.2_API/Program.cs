@@ -1,8 +1,9 @@
 using Healthcare_API_V0._2_Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
+using Healthcare_API_V0._2_Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddInfrastructure(builder.Configuration);
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -15,7 +16,7 @@ using (var scope = app.Services.CreateScope())
 {
     var roleManager =
         scope.ServiceProvider
-            .GetRequiredService<RoleManager<IdentityRole>>();
+            .GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
     await IdentitySeeder.SeedRolesAsync(roleManager);
 }

@@ -1,4 +1,5 @@
 using Healthcare_API.Models;
+using Healthcare_API_V0._2_Application.Interfaces;
 using Healthcare_API_V0._2_Application.Interfaces.Repository;
 using Healthcare_API_V0._2_Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
@@ -9,12 +10,16 @@ public class ClinicService : IClinicService
 {
     private readonly IClinicRepository _clinicRepository;
     private readonly ILogger<ClinicService> _logger;
+    private readonly ICacheService _cacheService;
 
-    public ClinicService(IClinicRepository clinicRepository, ILogger<ClinicService> logger)
+    public ClinicService(IClinicRepository clinicRepository, ILogger<ClinicService> logger, ICacheService cacheService)
     {
         _clinicRepository = clinicRepository;
         _logger = logger;
+        _cacheService = cacheService;
     }
+
+    private static string GetCacheKey(Guid clinicId) => $"clinic:{clinicId}";
 
     public async Task<Clinic?> GetByIdAsync(Guid clinicId, CancellationToken cancellationToken = default)
     {
@@ -25,11 +30,22 @@ public class ClinicService : IClinicService
         }
 
         _logger.LogInformation("Getting clinic with ID {ClinicId}", clinicId);
-        var clinic = await _clinicRepository.GetByIdAsync(clinicId, cancellationToken);
+        var clinic = await _cacheService.GetAsync<Clinic>(GetCacheKey(clinicId), cancellationToken);
+
+        if (clinic is not null)
+        {
+            return clinic;
+        }
+
+        clinic = await _clinicRepository.GetByIdAsync(clinicId, cancellationToken);
 
         if (clinic is null)
         {
             _logger.LogWarning("Clinic with ID {ClinicId} was not found", clinicId);
+        }
+        else
+        {
+            await _cacheService.SetAsync(GetCacheKey(clinicId), clinic, cancellationToken: cancellationToken);
         }
 
         return clinic;
@@ -71,6 +87,7 @@ public class ClinicService : IClinicService
 
         var clinic = new Clinic(name, address, city, phoneNumber);
         await _clinicRepository.AddAsync(clinic, cancellationToken);
+        await _cacheService.SetAsync(GetCacheKey(clinic.ClinicId), clinic, cancellationToken: cancellationToken);
 
         _logger.LogInformation("Clinic {ClinicId} was successfully created", clinic.ClinicId);
         return clinic;
@@ -113,6 +130,7 @@ public class ClinicService : IClinicService
 
         clinic.UpdateClinic(name, address, city, phoneNumber);
         await _clinicRepository.UpdateAsync(clinic, cancellationToken);
+        await _cacheService.SetAsync(GetCacheKey(clinicId), clinic, cancellationToken: cancellationToken);
 
         _logger.LogInformation("Clinic {ClinicId} was successfully updated", clinicId);
     }
@@ -135,6 +153,7 @@ public class ClinicService : IClinicService
         }
 
         await _clinicRepository.DeleteAsync(clinic, cancellationToken);
+        await _cacheService.RemoveAsync(GetCacheKey(clinicId), cancellationToken);
 
         _logger.LogInformation("Clinic {ClinicId} was successfully deleted", clinicId);
     }

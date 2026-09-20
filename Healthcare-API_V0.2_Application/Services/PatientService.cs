@@ -1,4 +1,5 @@
 using Healthcare_API.Models;
+using Healthcare_API_V0._2_Application.Interfaces;
 using Healthcare_API_V0._2_Application.Interfaces.Repository;
 using Healthcare_API_V0._2_Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
@@ -9,12 +10,16 @@ public class PatientService : IPatientService
 {
     private readonly IPatientRepository _patientRepository;
     private readonly ILogger<PatientService> _logger;
+    private readonly ICacheService _cacheService;
 
-    public PatientService(IPatientRepository patientRepository, ILogger<PatientService> logger)
+    public PatientService(IPatientRepository patientRepository, ILogger<PatientService> logger, ICacheService cacheService)
     {
         _patientRepository = patientRepository;
         _logger = logger;
+        _cacheService = cacheService;
     }
+
+    private static string GetCacheKey(Guid patientId) => $"patient:{patientId}";
 
     public async Task<Patient?> GetByIdAsync(Guid patientId, CancellationToken cancellationToken = default)
     {
@@ -25,11 +30,22 @@ public class PatientService : IPatientService
         }
 
         _logger.LogInformation("Getting patient with ID {PatientId}", patientId);
-        var patient = await _patientRepository.GetByIdAsync(patientId, cancellationToken);
+        var patient = await _cacheService.GetAsync<Patient>(GetCacheKey(patientId), cancellationToken);
+
+        if (patient is not null)
+        {
+            return patient;
+        }
+
+        patient = await _patientRepository.GetByIdAsync(patientId, cancellationToken);
 
         if (patient is null)
         {
             _logger.LogWarning("Patient with ID {PatientId} was not found", patientId);
+        }
+        else
+        {
+            await _cacheService.SetAsync(GetCacheKey(patientId), patient, cancellationToken: cancellationToken);
         }
 
         return patient;
@@ -73,6 +89,7 @@ public class PatientService : IPatientService
 
         var patient = new Patient(applicationUserId);
         await _patientRepository.AddAsync(patient, cancellationToken);
+        await _cacheService.SetAsync(GetCacheKey(patient.PatientId), patient, cancellationToken: cancellationToken);
 
         _logger.LogInformation("Patient {PatientId} was successfully created", patient.PatientId);
         return patient;
@@ -96,6 +113,7 @@ public class PatientService : IPatientService
         }
 
         await _patientRepository.DeleteAsync(patient, cancellationToken);
+        await _cacheService.RemoveAsync(GetCacheKey(patientId), cancellationToken);
 
         _logger.LogInformation("Patient {PatientId} was successfully deleted", patientId);
     }
