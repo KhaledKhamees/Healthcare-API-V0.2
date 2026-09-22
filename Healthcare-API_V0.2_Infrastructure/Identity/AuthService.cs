@@ -136,6 +136,49 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var email = request.Email?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogWarning("Login failed: email is missing");
+            throw new ArgumentException("Email is required.", nameof(request));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            _logger.LogWarning("Login failed: password is missing");
+            throw new ArgumentException("Password is required.", nameof(request));
+        }
+
+        _logger.LogInformation("Login attempt for email {Email}", email);
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user is null)
+        {
+            _logger.LogWarning("Login failed: no user found for email {Email}", email);
+            throw new InvalidOperationException("Invalid email or password.");
+        }
+
+        if (!await _userManager.CheckPasswordAsync(user, request.Password))
+        {
+            _logger.LogWarning("Login failed: incorrect password for email {Email}", email);
+            throw new InvalidOperationException("Invalid email or password.");
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+
+        _logger.LogInformation("Login succeeded for email {Email}", email);
+        return new LoginResponse
+        {
+            UserId = user.Id,
+            Email = user.Email ?? email,
+            Roles = roles.ToList()
+        };
+    }
+
     private async Task<ApplicationUser> CreateUserAsync(string email, string password, string role)
     {
         var existing = await _userManager.FindByEmailAsync(email);
