@@ -17,6 +17,7 @@ public class AuthService : IAuthService
     private readonly HealthcareDbContext _dbContext;
     private readonly IPatientService _patientService;
     private readonly IDoctorService _doctorService;
+    private readonly IJwtService _jwtService;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -25,6 +26,7 @@ public class AuthService : IAuthService
         HealthcareDbContext dbContext,
         IPatientService patientService,
         IDoctorService doctorService,
+        IJwtService jwtService,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
@@ -32,6 +34,7 @@ public class AuthService : IAuthService
         _dbContext = dbContext;
         _patientService = patientService;
         _doctorService = doctorService;
+        _jwtService = jwtService;
         _logger = logger;
     }
 
@@ -169,13 +172,16 @@ public class AuthService : IAuthService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
+        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.Email ?? email, roles);
 
         _logger.LogInformation("Login succeeded for email {Email}", email);
         return new LoginResponse
         {
             UserId = user.Id,
             Email = user.Email ?? email,
-            Roles = roles.ToList()
+            Roles = roles.ToList(),
+            AccessToken = accessToken,
+            TokenType = "Bearer"
         };
     }
 
