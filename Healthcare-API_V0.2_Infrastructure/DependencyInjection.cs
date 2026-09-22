@@ -4,6 +4,7 @@ using Healthcare_API_V0._2_Application.Interfaces.Repository;
 using Healthcare_API_V0._2_Application.Interfaces.Services;
 using Healthcare_API_V0._2_Application.Services;
 using Healthcare_API_V0._2_Infrastructure.Caching;
+using Healthcare_API_V0._2_Infrastructure.Identity;
 using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Healthcare_API_V0._2_Infrastructure.Repositories;
@@ -53,6 +54,7 @@ namespace Healthcare_API_V0._2_Infrastructure
             services.AddScoped<IDoctorClinicService, DoctorClinicService>();
             services.AddScoped<IDoctorAvailabilityService, DoctorAvailabilityService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IAuthService, AuthService>();
             services.AddSingleton<IConnectionMultiplexer>(
                 ConnectionMultiplexer.Connect(
                     configuration.GetConnectionString("Redis")!));
