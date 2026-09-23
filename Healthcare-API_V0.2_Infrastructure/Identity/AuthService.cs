@@ -1,9 +1,14 @@
 using Healthcare_API.Models;
 using Healthcare_API_V0._2_Application.DTOs.Auth;
+using Healthcare_API_V0._2_Application.Interfaces.Repository;
 using Healthcare_API_V0._2_Application.Interfaces.Services;
+using Healthcare_API_V0._2_Application.Options;
 using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Healthcare_API_V0._2_Infrastructure.Identity;
 
@@ -18,6 +23,9 @@ public class AuthService : IAuthService
     private readonly IPatientService _patientService;
     private readonly IDoctorService _doctorService;
     private readonly IJwtService _jwtService;
+    private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -27,6 +35,9 @@ public class AuthService : IAuthService
         IPatientService patientService,
         IDoctorService doctorService,
         IJwtService jwtService,
+        IRefreshTokenGenerator refreshTokenGenerator,
+        IRefreshTokenRepository refreshTokenRepository,
+        IOptions<JwtOptions> jwtOptions,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
@@ -35,6 +46,9 @@ public class AuthService : IAuthService
         _patientService = patientService;
         _doctorService = doctorService;
         _jwtService = jwtService;
+        _refreshTokenGenerator = refreshTokenGenerator;
+        _refreshTokenRepository = refreshTokenRepository;
+        _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
 
@@ -173,6 +187,7 @@ public class AuthService : IAuthService
 
         var roles = await _userManager.GetRolesAsync(user);
         var accessToken = _jwtService.GenerateAccessToken(user.Id, user.Email ?? email, roles);
+        var refreshToken = await IssueRefreshTokenAsync(user.Id, cancellationToken);
 
         _logger.LogInformation("Login succeeded for email {Email}", email);
         return new LoginResponse
@@ -181,8 +196,90 @@ public class AuthService : IAuthService
             Email = user.Email ?? email,
             Roles = roles.ToList(),
             AccessToken = accessToken,
-            TokenType = "Bearer"
+            TokenType = "Bearer",
+            RefreshToken = refreshToken
         };
+    }
+
+    public async Task<LoginResponse> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            _logger.LogWarning("Token refresh failed: refresh token is missing");
+            throw new ArgumentException("Refresh token is required.", nameof(request));
+        }
+
+        _logger.LogInformation("Refresh token rotation attempt");
+
+        var storedToken = await _refreshTokenRepository.GetByTokenHashAsync(HashRefreshToken(request.RefreshToken), cancellationToken);
+        if (storedToken is null || storedToken.IsExpired || storedToken.IsRevoked)
+        {
+            _logger.LogWarning("Token refresh failed: refresh token is invalid");
+            throw new InvalidOperationException("Invalid refresh token.");
+        }
+
+        var user = await _userManager.FindByIdAsync(storedToken.ApplicationUserId.ToString());
+        if (user is null || await _userManager.IsLockedOutAsync(user))
+        {
+            _logger.LogWarning("Token refresh failed: associated user is invalid");
+            throw new InvalidOperationException("Invalid refresh token.");
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.Email ?? string.Empty, roles);
+
+        var newRawToken = _refreshTokenGenerator.GenerateRefreshToken();
+        var newStoredToken = new RefreshToken(
+            user.Id,
+            HashRefreshToken(newRawToken),
+            DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays));
+
+        storedToken.MarkReplaced(newStoredToken.TokenHash);
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await _refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
+            await _refreshTokenRepository.AddAsync(newStoredToken, cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        _logger.LogInformation("Refresh token rotated for user {UserId}", user.Id);
+        return new LoginResponse
+        {
+            UserId = user.Id,
+            Email = user.Email ?? string.Empty,
+            Roles = roles.ToList(),
+            AccessToken = accessToken,
+            TokenType = "Bearer",
+            RefreshToken = newRawToken
+        };
+    }
+
+    private async Task<string> IssueRefreshTokenAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var rawToken = _refreshTokenGenerator.GenerateRefreshToken();
+        var storedToken = new RefreshToken(
+            userId,
+            HashRefreshToken(rawToken),
+            DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays));
+
+        await _refreshTokenRepository.AddAsync(storedToken, cancellationToken);
+        return rawToken;
+    }
+
+    private static string HashRefreshToken(string rawToken)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
+        return Convert.ToHexString(hash);
     }
 
     private async Task<ApplicationUser> CreateUserAsync(string email, string password, string role)

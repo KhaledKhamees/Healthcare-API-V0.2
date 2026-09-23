@@ -7,4 +7,5 @@ public interface IAuthService
     Task<RegisterResponse> RegisterPatientAsync(PatientRegisterRequest request, CancellationToken cancellationToken = default);
     Task<RegisterResponse> RegisterDoctorAsync(DoctorRegisterRequest request, CancellationToken cancellationToken = default);
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+    Task<LoginResponse> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default);
 }

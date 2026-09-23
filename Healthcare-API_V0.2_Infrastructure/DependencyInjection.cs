@@ -7,7 +7,6 @@ using Healthcare_API_V0._2_Application.Services;
 using Healthcare_API_V0._2_Infrastructure.Caching;
 using Healthcare_API_V0._2_Infrastructure.Identity;
 using Healthcare_API_V0._2_Infrastructure.Persistence;
-using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Healthcare_API_V0._2_Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -44,9 +43,7 @@ namespace Healthcare_API_V0._2_Infrastructure
             .AddEntityFrameworkStores<HealthcareDbContext>()
             .AddDefaultTokenProviders();
 
-            // JWT Bearer authentication (Phase 5: authentication only, no authorization).
-            // Reuses the Jwt section bound to JwtOptions; JwtOptions validation
-            // (ValidateOnStart) guarantees these values before the app serves traffic.
+            
             var jwtSection = configuration.GetSection(JwtOptions.SectionName);
             var jwtIssuer = jwtSection["Issuer"];
             var jwtAudience = jwtSection["Audience"];
@@ -60,14 +57,12 @@ namespace Healthcare_API_V0._2_Infrastructure
 
             services.AddAuthentication(options =>
             {
-                // Override the cookie defaults registered by AddIdentity so that
-                // JWT Bearer becomes the application's authentication scheme.
+
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer(options =>
             {
-                // Preserve the Phase 4 payload (sub/email/role) exactly as issued.
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -90,7 +85,7 @@ namespace Healthcare_API_V0._2_Infrastructure
             services.AddScoped<IDoctorClinicRepository, DoctorClinicRepository>();
             services.AddScoped<IDoctorAvailabilityRepository, DoctorAvailabilityRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IDoctorService, DoctorService>();
             services.AddScoped<IClinicService, ClinicService>();
@@ -100,13 +95,13 @@ namespace Healthcare_API_V0._2_Infrastructure
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
 
-            // Bind and validate JWT options at startup. Production must override
-            // Jwt:SecretKey via environment variable (Jwt__SecretKey) or User Secrets.
             services.AddOptions<JwtOptions>()
                 .Bind(configuration.GetSection(JwtOptions.SectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
+           
             services.AddSingleton<IConnectionMultiplexer>(
                 ConnectionMultiplexer.Connect(
                     configuration.GetConnectionString("Redis")!));

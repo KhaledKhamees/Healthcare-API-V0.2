@@ -7,4 +7,5 @@ public sealed class LoginResponse
     public List<string> Roles { get; set; } = new();
     public string AccessToken { get; set; } = string.Empty;
     public string TokenType { get; set; } = "Bearer";
+    public string RefreshToken { get; set; } = string.Empty;
 }

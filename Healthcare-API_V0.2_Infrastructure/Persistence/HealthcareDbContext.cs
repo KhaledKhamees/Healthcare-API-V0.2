@@ -24,6 +24,7 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
         public DbSet<DoctorAvailability> DoctorAvailabilities { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Specialization> Specializations { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -179,6 +180,27 @@ namespace Healthcare_API_V0._2_Infrastructure.Persistence
 
                 entity.Property(x => x.Status)
                     .HasConversion<int>();
+            });
+
+            // ===== RefreshToken Configuration =====
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(x => x.RefreshTokenId);
+
+                // Many-to-One relationship with ApplicationUser (via primitive FK only).
+                // Cascade so a deleted user does not leave orphaned session records.
+                entity.HasOne<ApplicationUser>()
+                    .WithMany()
+                    .HasForeignKey(x => x.ApplicationUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(x => x.TokenHash)
+                    .IsRequired();
+
+                entity.HasIndex(x => x.TokenHash)
+                    .IsUnique();
+
+                entity.HasIndex(x => x.ApplicationUserId);
             });
         }
     }

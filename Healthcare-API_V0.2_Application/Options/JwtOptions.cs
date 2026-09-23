@@ -18,4 +18,7 @@ public sealed class JwtOptions
 
     [Range(1, int.MaxValue, ErrorMessage = "JWT ExpirationMinutes must be a positive number of minutes.")]
     public int ExpirationMinutes { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "JWT RefreshTokenExpirationDays must be a positive number of days.")]
+    public int RefreshTokenExpirationDays { get; set; }
 }
