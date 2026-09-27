@@ -1,3 +1,4 @@
+using Healthcare_API_V0._2_API.Middleware;
 using Healthcare_API_V0._2_Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Healthcare_API_V0._2_Infrastructure;
@@ -10,6 +11,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 
 builder.Services.AddCors(options =>
 {
@@ -32,7 +35,9 @@ using (var scope = app.Services.CreateScope())
     await IdentitySeeder.SeedRolesAsync(roleManager);
 }
 
-// Configure the HTTP request pipeline.
+
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
