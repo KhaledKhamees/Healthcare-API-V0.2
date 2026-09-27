@@ -48,11 +48,22 @@ public sealed class GlobalExceptionHandlingMiddleware : IMiddleware
 
         if (statusCode == StatusCodes.Status500InternalServerError)
         {
-            _logger.LogError(exception, "Unhandled exception. TraceId: {TraceId}", traceId);
+            _logger.LogError(
+                exception,
+                "Unhandled exception occurred while processing request {RequestMethod} {RequestPath}. TraceId: {TraceId}",
+                context.Request.Method,
+                context.Request.Path,
+                traceId);
         }
         else
         {
-            _logger.LogWarning(exception, "Handled {StatusCode} error. TraceId: {TraceId}", statusCode, traceId);
+            _logger.LogWarning(
+                exception,
+                "Handled {StatusCode} error while processing request {RequestMethod} {RequestPath}. TraceId: {TraceId}",
+                statusCode,
+                context.Request.Method,
+                context.Request.Path,
+                traceId);
         }
 
         context.Response.Clear();

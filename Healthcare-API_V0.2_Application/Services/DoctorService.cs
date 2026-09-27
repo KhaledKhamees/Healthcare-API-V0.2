@@ -209,13 +209,14 @@ public class DoctorService : IDoctorService
             throw new KeyNotFoundException($"Doctor with ID {doctorId} was not found.");
         }
 
+        var oldStatus = doctor.Status;
         doctor.ChangeStatus(newStatus);
         await _doctorRepository.UpdateAsync(doctor, cancellationToken);
         await _cacheService.RemoveAsync(
                 GetCacheKey(doctorId),
                 cancellationToken);
 
-        _logger.LogInformation("Doctor {DoctorId} status was successfully changed to {DoctorStatus}", doctorId, newStatus);
+        _logger.LogInformation("Doctor {DoctorId} status changed from {OldStatus} to {NewStatus}", doctorId, oldStatus, newStatus);
     }
 
     public async Task DeleteAsync(Guid doctorId, CancellationToken cancellationToken = default)

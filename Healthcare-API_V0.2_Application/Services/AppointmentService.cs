@@ -182,10 +182,11 @@ public class AppointmentService : IAppointmentService
             throw new KeyNotFoundException($"Appointment with ID {appointmentId} was not found.");
         }
 
+        var oldStatus = appointment.Status;
         appointment.ChangeStatus(newStatus);
         await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
 
-        _logger.LogInformation("Appointment {AppointmentId} status was successfully changed to {AppointmentStatus}", appointmentId, newStatus);
+        _logger.LogInformation("Appointment {AppointmentId} status changed from {OldStatus} to {NewStatus}", appointmentId, oldStatus, newStatus);
     }
 
     public async Task CancelAsync(Guid appointmentId, CancellationToken cancellationToken = default)

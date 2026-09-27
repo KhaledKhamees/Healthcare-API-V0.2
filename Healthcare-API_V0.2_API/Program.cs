@@ -2,8 +2,14 @@ using Healthcare_API_V0._2_API.Middleware;
 using Healthcare_API_V0._2_Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Healthcare_API_V0._2_Infrastructure;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
+
 builder.Services.AddInfrastructure(builder.Configuration);
 // Add services to the container.
 
@@ -35,6 +41,7 @@ using (var scope = app.Services.CreateScope())
     await IdentitySeeder.SeedRolesAsync(roleManager);
 }
 
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
