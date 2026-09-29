@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Elastic.Apm.NetCoreAll" Version="1.35.0" />
+    <PackageReference Include="Elastic.Serilog.Sinks" Version="8.19.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.31">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
