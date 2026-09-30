@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare-API_V0.2_API", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare-API_V0.2.Tests", "Healthcare-API_V0.2.Tests\Healthcare-API_V0.2.Tests.csproj", "{1A5E1245-152F-407D-9150-90A5ECBB4734}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Healthcare.LoadTests", "Healthcare.LoadTests\Healthcare.LoadTests.csproj", "{E5146280-5906-49A3-821D-78BC7568513A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{1A5E1245-152F-407D-9150-90A5ECBB4734}.Release|x64.Build.0 = Release|Any CPU
 		{1A5E1245-152F-407D-9150-90A5ECBB4734}.Release|x86.ActiveCfg = Release|Any CPU
 		{1A5E1245-152F-407D-9150-90A5ECBB4734}.Release|x86.Build.0 = Release|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Debug|x64.Build.0 = Debug|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Debug|x86.Build.0 = Debug|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Release|x64.ActiveCfg = Release|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Release|x64.Build.0 = Release|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Release|x86.ActiveCfg = Release|Any CPU
+		{E5146280-5906-49A3-821D-78BC7568513A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
