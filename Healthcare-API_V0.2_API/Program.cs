@@ -1,16 +1,19 @@
 using Elastic.Ingest.Elasticsearch;
 using Elastic.Ingest.Elasticsearch.DataStreams;
 using Elastic.Serilog.Sinks;
-using Elastic.Transport;
 using Healthcare_API_V0._2_API.Middleware;
 using Healthcare_API_V0._2_Infrastructure;
 using Healthcare_API_V0._2_Infrastructure.Identity;
+using Healthcare_API_V0._2_Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Debugging;
 using Serilog.Formatting.Compact;
-using Serilog.Sinks.SystemConsole.Themes;
 
 var builder = WebApplication.CreateBuilder(args);
+
+SelfLog.Enable(message => Console.Error.WriteLine($"[Serilog SelfLog] {message}"));
 
 builder.Logging.ClearProviders();
 builder.Services.AddAllElasticApm();
@@ -52,6 +55,15 @@ try
     });
 
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var logger = scope.ServiceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger("DatabaseInitializer");
+
+        await DatabaseInitializer.MigrateAsync(scope.ServiceProvider, logger);
+    }
 
     using (var scope = app.Services.CreateScope())
     {
@@ -97,16 +109,10 @@ finally
 static Serilog.Core.Logger BuildLogger(IConfiguration configuration)
 {
     var loggerConfig = new LoggerConfiguration()
-        .ReadFrom.Configuration(configuration)
-        .WriteTo.Console(
-            outputTemplate:
-                "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}",
-            theme: AnsiConsoleTheme.Code);
+        .ReadFrom.Configuration(configuration);
 
     var elasticsearchUri = configuration["Elasticsearch:Uri"]
         ?? throw new InvalidOperationException("Elasticsearch:Uri is not configured");
-    var elasticsearchPassword = configuration["Elasticsearch:Password"]
-        ?? throw new InvalidOperationException("Elasticsearch:Password is not configured");
 
     loggerConfig.WriteTo.Elasticsearch(
         new[] { new Uri(elasticsearchUri) },
@@ -121,8 +127,6 @@ static Serilog.Core.Logger BuildLogger(IConfiguration configuration)
         },
         transport =>
         {
-            transport.Authentication(
-                new BasicAuthentication("elastic", elasticsearchPassword));
             transport.ServerCertificateValidationCallback(
                 (sender, certificate, chain, sslPolicyErrors) => true);
         });

@@ -1,0 +1,136 @@
+services:
+  # SQL Server
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-LocalDev_StrongPassw0rd!}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+    healthcheck:
+      # '$$' escapes the '$' so the variable is expanded inside the container,
+      # not on the host. sqlcmd is probed on both known tool paths because the
+      # 2022-latest image ships mssql-tools18.
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q 'SELECT 1' -o /dev/null || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -o /dev/null"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.4
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:9200/_cluster/health || exit 1"
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.5.4
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Elastic APM Server
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:9.5.4
+    command:
+      - "--strict.perms=false"
+      - "-e"
+      - "-E"
+      - "apm-server.host=0.0.0.0:8200"
+      - "-E"
+      - 'output.elasticsearch.hosts=["http://elasticsearch:9200"]'
+    ports:
+      - "8200:8200"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Healthcare API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      ConnectionStrings__DefaultConnection: "Server=sql,1433;Database=HealthcareDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-LocalDev_StrongPassw0rd!};TrustServerCertificate=True;"
+
+      # Confirm this key matches your Redis configuration.
+      ConnectionStrings__Redis: "redis:6379"
+
+      # Elastic APM .NET Agent configuration.
+      # These must map onto the 'ElasticApm' section that AddAllElasticApm() reads
+      # (double underscore => colon). The ELASTIC_APM_* form is honoured only by the
+      # .NET Framework agent build, not by .NET 8, so it would be silently ignored here.
+      ElasticApm__ServerUrl: "http://apm-server:8200"
+      ElasticApm__ServiceName: "healthcare-api"
+      ElasticApm__Environment: "Development"
+
+      # Read as 'Elasticsearch:Uri' in Program.cs for the Serilog Elasticsearch sink.
+      # Elasticsearch runs with xpack.security.enabled=false, so no credentials are used.
+      Elasticsearch__Uri: "http://elasticsearch:9200"
+
+    depends_on:
+      sql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  sql_data:
+  redis_data:
+  elasticsearch_data:
