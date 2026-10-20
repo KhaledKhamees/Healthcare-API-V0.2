@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Debugging;
 using Serilog.Formatting.Compact;
-
+// GG
 var builder = WebApplication.CreateBuilder(args);
 
 SelfLog.Enable(message => Console.Error.WriteLine($"[Serilog SelfLog] {message}"));
